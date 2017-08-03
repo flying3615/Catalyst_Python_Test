@@ -5,6 +5,8 @@ import MySQLdb
 import csv
 import re
 
+from _mysql_exceptions import IntegrityError
+
 helpInfo = """Help Info options and arguments:
 --file [csv file name]  :this is the name of the CSV to be parsed
 --create_table          :this will cause the MySQL users table to be built (and no further action will be taken)
@@ -21,14 +23,16 @@ mySQL_username = None
 mySQL_password = None
 mySQL_host = None
 filePath = None
+reset_table = None
 
 def db_init(host, username, password, db_name):
-    print host, username, password, db_name
+    global db
     db = MySQLdb.connect(host, username, password, db_name)
 
 
-def db_setup():
+def table_setup():
     """To setup DB table by recreate"""
+    print "recreate table..."
     try:
         cursor = db.cursor()
         sql_delete_table = "DROP TABLE catalyst_user"
@@ -44,7 +48,6 @@ def db_setup():
         cursor.execute(sql_create_table)
         db.commit()
     except:
-        # Rollback in case there is any error
         db.rollback()
 
 
@@ -54,6 +57,10 @@ def db_close():
 
 
 def parse_file(filePath):
+    if not filePath:
+        print "Please input file first..."
+        sys.exit(1)
+
     header = None
     values = []
     with open(filePath) as f:
@@ -69,7 +76,7 @@ def parse_file(filePath):
 
 def insert_DB():
     header, values = parse_file(filePath)
-    sql = "INSERT INTO USER("
+    sql = "INSERT INTO catalyst_user("
 
     # record the index of concerned column
     name_index = None
@@ -95,24 +102,30 @@ def insert_DB():
                         print col_value + " is not a valid email"
                     else:
                         col_value = col_value.strip()
-                insert_sql += "'" + col_value + "',"
+                insert_sql += "\"" + col_value + "\","
             if continue_outer: continue
             insert_sql = insert_sql[:-1] + ")"
-            print insert_sql
+            print insert_sql,
             # execute sql if not dry run
             if not isDryRun:
                 cursor = db.cursor()
-                cursor.execute(insert_sql)
+                try:
+                    cursor.execute(insert_sql)
+                    print " Done"
+                except IntegrityError:
+                    continue
         db.commit()
-    except:
+    except IOError as e:
         # Rollback in case there is any error
+        print e
         db.rollback()
 
 
 try:
 
-    opts, args = getopt.getopt(sys.argv[1:], "hu:p:h", ["file=", "create_table=", "dry_run", "help"])
+    opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help","file=", "create_table", "dry_run"])
 
+    print opts,args
     for op, value in opts:
 
         if op == '--help':
@@ -132,7 +145,7 @@ try:
             print "mySQL host = " + mySQL_host
 
         if op == '--create_table':
-            isDryRun = True
+            reset_table = True
 
         if op == '--file':
             filePath = value
@@ -143,14 +156,10 @@ try:
                 print "file " + filePath + " is not supported"
 
         if op == '--dry_run':
-            if not filePath:
-                print "Please input file first..."
-                sys.exit(1)
-            else:
-                # do parse file
-                print "parse file..."
+            isDryRun = True
 
-    db_init(host=mySQL_host, username=mySQL_username, password=mySQL_password, db_name="wrodpress")
+    db_init(host=mySQL_host, username=mySQL_username, password=mySQL_password, db_name="wordpress")
+    if reset_table: table_setup()
     insert_DB()
 except getopt.GetoptError as ge:
     print "Unexpected option " + ge.opt + helpInfo
