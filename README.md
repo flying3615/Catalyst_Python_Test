@@ -5,7 +5,7 @@
 - CSV content of three columns can be in any order, as I record each index of them
 - Ignored blank lines in CSV file
 - Any records with invalid email cannot be inserted into DB 
- 
+- DB final result should be: 
 >1	John	Smith	jsmith@gmail.com  
 2	Hamish	Jones	ham@seek.com  
 3	Phil	Carry	phil@open.edu.au  
