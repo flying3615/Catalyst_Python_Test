@@ -108,7 +108,7 @@ def insert_user(header, values, is_dry_run):
                         continue_outer = True  # continue outer loop if email check failed
                         print col_value + " is not a valid email"
                     else:
-                        col_value = col_value.strip()
+                        col_value = col_value.strip().lower()
                 insert_sql += "\"" + col_value + "\","
             if continue_outer: continue
             insert_sql = insert_sql[:-1] + ")"
