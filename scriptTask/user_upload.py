@@ -1,6 +1,7 @@
+#!/usr/bin/python
+
 import getopt
 import sys
-
 import MySQLdb
 import csv
 import re
@@ -28,6 +29,7 @@ TABLE_NAME = "users"
 
 
 def db_init(host, username, password, db_name):
+    """init db connection"""
     global db
     db = MySQLdb.connect(host, username, password, db_name)
 
@@ -55,14 +57,13 @@ def table_setup():
 
 
 def db_close():
+    """close connection if it's inited"""
     if db is not None:
         db.close()
 
 
 def parse_file(filePath):
-    # if not filePath:
-    #     print "Please input file first..."
-    #     sys.exit(1)
+    """read csv file and extract header and records"""
     try:
         header = None
         values = []
@@ -80,10 +81,10 @@ def parse_file(filePath):
         sys.exit(1)
 
 
-def insert_DB():
+def insert_user():
+    """insert into DB according to the result of file content. """
     header, values = parse_file(filePath)
     sql = "INSERT INTO "+TABLE_NAME+" ("
-
     # record the index of concerned column so that three columns can be any order in the file
     name_index = None
     surname_index = None
@@ -104,7 +105,7 @@ def insert_DB():
                 if index == email_index:
                     # regexp check
                     if not re.match(r"[^@]+@[^@]+\.[^@]+", col_value.strip()):
-                        continue_outer = True
+                        continue_outer = True  # continue outer loop if email check failed
                         print col_value + " is not a valid email"
                     else:
                         col_value = col_value.strip()
@@ -164,7 +165,7 @@ try:
 
     db_init(host=mySQL_host, username=mySQL_username, password=mySQL_password, db_name="wordpress")
     if reset_table: table_setup()
-    insert_DB()
+    insert_user()
 except getopt.GetoptError as ge:
     print "Unexpected option " + ge.opt + helpInfo
     sys.exit(1)
