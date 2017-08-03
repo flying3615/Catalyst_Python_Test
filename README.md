@@ -5,6 +5,9 @@
 - CSV content of three columns can be in any order, as I record each index of them
 - Ignored blank lines in CSV file
 - Any records with invalid email cannot be inserted into DB 
+- INSERT statements are dynamically generated, if it's not dry-run, *Done* will be printed out at the end to indicate it's been inserted
+  INSERT INTO users (name,surname,email) VALUES ("John","Smith","jsmith@gmail.com")  *Done*
+
 - DB final result should be: 
 >1	John	Smith	jsmith@gmail.com  
 2	Hamish	Jones	ham@seek.com  
