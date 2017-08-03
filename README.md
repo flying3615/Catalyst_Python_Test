@@ -7,7 +7,7 @@
 - Any records with invalid email cannot be inserted into DB 
 - INSERT statements are dynamically generated, if it's not dry-run, *Done* will be printed out at the end to indicate it's been inserted
   INSERT INTO users (name,surname,email) VALUES ("John","Smith","jsmith@gmail.com")  *Done*
-
+- The result of running the script also has been handled, "1" is abnormal
 - DB final result should be: 
 >1	John	Smith	jsmith@gmail.com  
 2	Hamish	Jones	ham@seek.com  
