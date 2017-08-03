@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import getopt
+import inspect
 import sys
 import MySQLdb
 import csv
@@ -25,6 +26,12 @@ TABLE_NAME = "users"
 def db_init(host, username, password, db_name):
     """init db connection"""
     global db
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    for i in args:
+        if not values[i]:
+            print i + " is none, please check the help info"
+            sys.exit(1)
     db = MySQLdb.connect(host, username, password, db_name)
 
 
@@ -113,7 +120,7 @@ def insert_user(header, values, is_dry_run):
                     cursor.execute(insert_sql)
                     print " Done"
                 except IntegrityError:
-                    print "insert failed due to integrity violated for "+col_value
+                    print "insert failed due to integrity violated for " + col_value
                     continue
             else:
                 print "data not inserted due to in dry run model"
@@ -141,25 +148,19 @@ def main():
 
             if op == '-u':
                 mysql_username = value
-                print "mySQL username = " + mysql_username
 
             if op == '-p':
                 mysql_password = value
-                print "mySQL password = " + mysql_password
 
             if op == '-h':
                 mysql_host = value
-                print "mySQL host = " + mysql_host
 
             if op == '--create_table':
                 reset_table = True
 
             if op == '--file':
                 file_path = value
-                if "csv" in file_path:
-                    print "file_path = " + file_path
-                # do import
-                else:
+                if "csv" not in file_path:
                     print "file " + file_path + " is not supported"
                     sys.exit(1)
 
@@ -167,6 +168,7 @@ def main():
                 is_dry_run = True
 
         db_init(host=mysql_host, username=mysql_username, password=mysql_password, db_name="wordpress")
+        print "after init"
         if reset_table: table_setup()
         header, values = parse_file(file_path)
         insert_user(header, values, is_dry_run)
