@@ -19,12 +19,6 @@ helpInfo = """Help Info options and arguments:
 """
 
 db = None
-isDryRun = False
-mySQL_username = None
-mySQL_password = None
-mySQL_host = None
-filePath = None
-reset_table = None
 TABLE_NAME = "users"
 
 
@@ -39,8 +33,8 @@ def table_setup():
     print "recreate table..."
     try:
         cursor = db.cursor()
-        sql_delete_table = "DROP TABLE IF EXISTS "+TABLE_NAME
-        sql_create_table = "CREATE TABLE "+TABLE_NAME+""" (
+        sql_delete_table = "DROP TABLE IF EXISTS " + TABLE_NAME
+        sql_create_table = "CREATE TABLE " + TABLE_NAME + """ (
                                 id int(11) unsigned NOT NULL AUTO_INCREMENT,
                             name varchar(100) DEFAULT NULL,
                             surname varchar(100) DEFAULT NULL,
@@ -81,10 +75,9 @@ def parse_file(filePath):
         sys.exit(1)
 
 
-def insert_user():
+def insert_user(header, values, is_dry_run):
     """insert into DB according to the result of file content. """
-    header, values = parse_file(filePath)
-    sql = "INSERT INTO "+TABLE_NAME+" ("
+    sql = "INSERT INTO " + TABLE_NAME + " ("
     # record the index of concerned column so that three columns can be any order in the file
     name_index = None
     surname_index = None
@@ -112,15 +105,18 @@ def insert_user():
                 insert_sql += "\"" + col_value + "\","
             if continue_outer: continue
             insert_sql = insert_sql[:-1] + ")"
-            print insert_sql,
+            print insert_sql
             # execute sql if not dry run
-            if not isDryRun:
+            if not is_dry_run:
                 cursor = db.cursor()
                 try:
                     cursor.execute(insert_sql)
                     print " Done"
                 except IntegrityError:
+                    print "insert failed due to integrity violated for "+col_value
                     continue
+            else:
+                print "data not inserted due to in dry run model"
         db.commit()
     except IOError as e:
         # Rollback in case there is any error
@@ -128,46 +124,58 @@ def insert_user():
         db.rollback()
 
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help", "file=", "create_table", "dry_run"])
-    for op, value in opts:
+def main():
+    is_dry_run = False
+    mysql_username = None
+    mysql_password = None
+    mysql_host = None
+    reset_table = None
 
-        if op == '--help':
-            print helpInfo
-            sys.exit(0)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help", "file=", "create_table", "dry_run"])
+        for op, value in opts:
 
-        if op == '-u':
-            mySQL_username = value
-            print "mySQL username = " + mySQL_username
+            if op == '--help':
+                print helpInfo
+                sys.exit(0)
 
-        if op == '-p':
-            mySQL_password = value
-            print "mySQL password = " + mySQL_password
+            if op == '-u':
+                mysql_username = value
+                print "mySQL username = " + mysql_username
 
-        if op == '-h':
-            mySQL_host = value
-            print "mySQL host = " + mySQL_host
+            if op == '-p':
+                mysql_password = value
+                print "mySQL password = " + mysql_password
 
-        if op == '--create_table':
-            reset_table = True
+            if op == '-h':
+                mysql_host = value
+                print "mySQL host = " + mysql_host
 
-        if op == '--file':
-            filePath = value
-            if "csv" in filePath:
-                print "filePath = " + filePath
-            # do import
-            else:
-                print "file " + filePath + " is not supported"
-                sys.exit(1)
+            if op == '--create_table':
+                reset_table = True
 
-        if op == '--dry_run':
-            isDryRun = True
+            if op == '--file':
+                file_path = value
+                if "csv" in file_path:
+                    print "file_path = " + file_path
+                # do import
+                else:
+                    print "file " + file_path + " is not supported"
+                    sys.exit(1)
 
-    db_init(host=mySQL_host, username=mySQL_username, password=mySQL_password, db_name="wordpress")
-    if reset_table: table_setup()
-    insert_user()
-except getopt.GetoptError as ge:
-    print "Unexpected option " + ge.opt + helpInfo
-    sys.exit(1)
-finally:
-    db_close()
+            if op == '--dry_run':
+                is_dry_run = True
+
+        db_init(host=mysql_host, username=mysql_username, password=mysql_password, db_name="wordpress")
+        if reset_table: table_setup()
+        header, values = parse_file(file_path)
+        insert_user(header, values, is_dry_run)
+    except getopt.GetoptError as ge:
+        print "Unexpected option " + ge.opt + helpInfo
+        sys.exit(1)
+    finally:
+        db_close()
+
+
+if __name__ == "__main__":
+    main()
