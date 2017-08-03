@@ -96,39 +96,38 @@ def insert_user(header, values, is_dry_run):
         if 'email' == column.strip(): email_index = index
         sql += column.strip() + ","
     sql = sql[:-1] + ") VALUES ("
-    try:
-        for record in values:
-            continue_outer = False
-            insert_sql = sql
-            for index, col_value in enumerate(record):
-                if index == name_index or index == surname_index: col_value = col_value.strip().title()
-                if index == email_index:
-                    # regexp check
-                    if not re.match(r"[^@]+@[^@]+\.[^@]+", col_value.strip()):
-                        continue_outer = True  # continue outer loop if email check failed
-                        print col_value + " is not a valid email"
-                    else:
-                        col_value = col_value.strip().lower()
-                insert_sql += "\"" + col_value + "\","
-            if continue_outer: continue
-            insert_sql = insert_sql[:-1] + ")"
-            print insert_sql
-            # execute sql if not dry run
-            if not is_dry_run:
-                cursor = db.cursor()
-                try:
-                    cursor.execute(insert_sql)
-                    print " Done"
-                except IntegrityError:
-                    print "insert failed due to integrity violated for " + col_value
-                    continue
-            else:
-                print "data not inserted due to in dry run model"
-        db.commit()
-    except IOError as e:
-        # Rollback in case there is any error
-        print e
-        db.rollback()
+
+    for record in values:
+        continue_outer = False
+        insert_sql = sql
+        for index, col_value in enumerate(record):
+            if index == name_index or index == surname_index: col_value = col_value.strip().title()
+            if index == email_index:
+                # regexp check
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", col_value.strip()):
+                    continue_outer = True  # continue outer loop if email check failed
+                    print col_value + " is not a valid email"
+                else:
+                    col_value = col_value.strip().lower()
+            insert_sql += "\"" + col_value + "\","
+        if continue_outer: continue
+        insert_sql = insert_sql[:-1] + ")"
+        print insert_sql
+        # execute sql if not dry run
+        if not is_dry_run:
+            cursor = db.cursor()
+            try:
+                cursor.execute(insert_sql)
+                print " Done"
+                db.commit()
+            except IntegrityError:
+                print "insert failed due to integrity violated for " + col_value
+                db.rollback()
+
+            continue
+        else:
+            print "data not inserted due to in dry run model"
+
 
 
 def main():
