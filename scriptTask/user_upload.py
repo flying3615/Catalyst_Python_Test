@@ -25,6 +25,7 @@ mySQL_host = None
 filePath = None
 reset_table = None
 
+
 def db_init(host, username, password, db_name):
     global db
     db = MySQLdb.connect(host, username, password, db_name)
@@ -47,7 +48,8 @@ def table_setup():
         cursor.execute(sql_delete_table)
         cursor.execute(sql_create_table)
         db.commit()
-    except:
+    except IOError as e:
+        print e
         db.rollback()
 
 
@@ -57,28 +59,31 @@ def db_close():
 
 
 def parse_file(filePath):
-    if not filePath:
-        print "Please input file first..."
+    # if not filePath:
+    #     print "Please input file first..."
+    #     sys.exit(1)
+    try:
+        header = None
+        values = []
+        with open(filePath) as f:
+            reader = csv.reader(f)
+            for line, row in enumerate(reader):
+                if line == 0:
+                    header = row
+                else:
+                    if len(row) == 0: continue  # blank line
+                    values.append(row)
+        return header, values
+    except IOError as e:
+        print e
         sys.exit(1)
-
-    header = None
-    values = []
-    with open(filePath) as f:
-        reader = csv.reader(f)
-        for line, row in enumerate(reader):
-            if line == 0:
-                header = row
-            else:
-                if len(row) == 0: continue  # blank line
-                values.append(row)
-    return header, values
 
 
 def insert_DB():
     header, values = parse_file(filePath)
     sql = "INSERT INTO catalyst_user("
 
-    # record the index of concerned column
+    # record the index of concerned column so that three columns can be any order in the file
     name_index = None
     surname_index = None
     email_index = None
@@ -122,10 +127,7 @@ def insert_DB():
 
 
 try:
-
-    opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help","file=", "create_table", "dry_run"])
-
-    print opts,args
+    opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help", "file=", "create_table", "dry_run"])
     for op, value in opts:
 
         if op == '--help':
@@ -154,6 +156,7 @@ try:
             # do import
             else:
                 print "file " + filePath + " is not supported"
+                sys.exit(1)
 
         if op == '--dry_run':
             isDryRun = True
