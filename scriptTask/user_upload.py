@@ -24,6 +24,7 @@ mySQL_password = None
 mySQL_host = None
 filePath = None
 reset_table = None
+TABLE_NAME = "users"
 
 
 def db_init(host, username, password, db_name):
@@ -36,8 +37,8 @@ def table_setup():
     print "recreate table..."
     try:
         cursor = db.cursor()
-        sql_delete_table = "DROP TABLE catalyst_user"
-        sql_create_table = """CREATE TABLE catalyst_user (
+        sql_delete_table = "DROP TABLE IF EXISTS "+TABLE_NAME
+        sql_create_table = "CREATE TABLE "+TABLE_NAME+""" (
                                 id int(11) unsigned NOT NULL AUTO_INCREMENT,
                             name varchar(100) DEFAULT NULL,
                             surname varchar(100) DEFAULT NULL,
@@ -81,7 +82,7 @@ def parse_file(filePath):
 
 def insert_DB():
     header, values = parse_file(filePath)
-    sql = "INSERT INTO catalyst_user("
+    sql = "INSERT INTO "+TABLE_NAME+" ("
 
     # record the index of concerned column so that three columns can be any order in the file
     name_index = None
