@@ -168,7 +168,7 @@ def main():
                 is_dry_run = True
 
         db_init(host=mysql_host, username=mysql_username, password=mysql_password, db_name="wordpress")
-        print "after init"
+        print "after init connection..."
         if reset_table: table_setup()
         header, values = parse_file(file_path)
         insert_user(header, values, is_dry_run)
