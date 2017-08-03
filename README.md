@@ -1,5 +1,5 @@
-#Response to script&logic tasks
-##In terms of script task
+# Response to script&logic tasks
+## In terms of script task
 - There are two branches dev/master, have been working on dev and merge it to master.
 - I reuse my docker wordpress env to simulate mysql server, so that I assume the DB name is *wordpress*
 - CSV content of three columns can be in any order, as I record each index of them
