@@ -113,20 +113,20 @@ def insert_user(header, values, is_dry_run):
         if continue_outer: continue
         insert_sql = insert_sql[:-1] + ")"
         print insert_sql
-        # execute sql if not dry run
-        if not is_dry_run:
-            cursor = db.cursor()
-            try:
-                cursor.execute(insert_sql)
-                print " Done"
-                db.commit()
-            except IntegrityError:
-                print "insert failed due to integrity violated for " + col_value
-                db.rollback()
+    # execute sql if not dry run
+    if not is_dry_run:
+        cursor = db.cursor()
+        try:
+            cursor.execute(insert_sql)
+            print " Done"
+            db.commit()
+        except IntegrityError:
+            print "insert failed due to integrity violated for " + col_value
+            db.rollback()
 
-            continue
-        else:
-            print "data not inserted due to in dry run model"
+        continue
+    else:
+        print "data not inserted due to in dry run model"
 
 
 
