@@ -178,11 +178,13 @@ def main():
         print "after init connection..."
         if reset_table: table_setup()
         header, values = parse_file(file_path)
-        insert_statements = construct_statements(header, values, is_dry_run)
+        insert_statements = construct_statements(header, values)
         if not is_dry_run:
             do_insert(insert_statements)
         else:
             print "data not inserted due to in dry run model"
+            for statement in insert_statements:
+                print statement
     except getopt.GetoptError as ge:
         print "Unexpected option " + ge.opt + helpInfo
         sys.exit(1)
