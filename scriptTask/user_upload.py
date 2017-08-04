@@ -117,7 +117,6 @@ def construct_statements(header, values):
         if continue_outer: continue
         insert_sql = insert_sql[:-1] + ")"
         insert_statements.append(insert_sql)
-        # execute sql if not dry run
 
     return insert_statements
 
