@@ -3,10 +3,13 @@
 import getopt
 import inspect
 import sys
+import traceback
+
 import MySQLdb
 import csv
 import re
 
+import _mysql_exceptions
 from _mysql_exceptions import IntegrityError
 
 helpInfo = """Help Info options and arguments:
@@ -82,7 +85,7 @@ def parse_file(filePath):
         sys.exit(1)
 
 
-def insert_user(header, values, is_dry_run):
+def construct_statements(header, values):
     """insert into DB according to the result of file content. """
     sql = "INSERT INTO " + TABLE_NAME + " ("
     # record the index of concerned column so that three columns can be any order in the file
@@ -90,6 +93,7 @@ def insert_user(header, values, is_dry_run):
     surname_index = None
     email_index = None
 
+    insert_statements = []
     for index, column in enumerate(header):
         if 'name' == column.strip(): name_index = index
         if 'surname' == column.strip(): surname_index = index
@@ -112,22 +116,26 @@ def insert_user(header, values, is_dry_run):
             insert_sql += "\"" + col_value + "\","
         if continue_outer: continue
         insert_sql = insert_sql[:-1] + ")"
-        print insert_sql
+        insert_statements.append(insert_sql)
         # execute sql if not dry run
-        if not is_dry_run:
-            cursor = db.cursor()
-            try:
-                cursor.execute(insert_sql)
-                print " Done"
-                db.commit()
-            except IntegrityError:
-                print "insert failed due to integrity violated for " + col_value
-                db.rollback()
 
-            continue
-        else:
-            print "data not inserted due to in dry run model"
+    return insert_statements
 
+
+def do_insert(insert_statements):
+    cursor = db.cursor()
+    for insert_sql in insert_statements:
+        try:
+            cursor.execute(insert_sql)
+            print insert_sql + " Done"
+            db.commit()
+        except IntegrityError:
+            print "insert failed due to integrity violated when executing " + insert_sql
+            db.rollback()
+        except _mysql_exceptions.ProgrammingError:
+            print "DB error..."
+            traceback.print_exc(file=sys.stdout)
+            break
 
 
 def main():
@@ -170,13 +178,16 @@ def main():
         print "after init connection..."
         if reset_table: table_setup()
         header, values = parse_file(file_path)
-        insert_user(header, values, is_dry_run)
+        insert_statements = construct_statements(header, values, is_dry_run)
+        if not is_dry_run:
+            do_insert(insert_statements)
+        else:
+            print "data not inserted due to in dry run model"
     except getopt.GetoptError as ge:
         print "Unexpected option " + ge.opt + helpInfo
         sys.exit(1)
     finally:
         db_close()
-
 
 if __name__ == "__main__":
     main()
