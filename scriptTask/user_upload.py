@@ -62,6 +62,7 @@ def table_setup():
 
 def db_close():
     """close connection if it's inited"""
+    global db
     if db is not None:
         db.close()
 
